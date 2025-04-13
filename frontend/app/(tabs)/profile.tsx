@@ -152,7 +152,7 @@ export default function ProfileScreen() {
     console.log('User data:', user);
     console.log('Followers count:', user?.stats?.followers);
     console.log('Following count:', user?.stats?.following);
-    router.push(`/profile/followers?id=${user.id}`);
+    router.push(`/profile/followers?id=${user._id}`);
   };
 
   const navigateToFollowing = () => {
@@ -160,7 +160,7 @@ export default function ProfileScreen() {
     console.log('User data:', user);
     console.log('Followers count:', user?.stats?.followers);
     console.log('Following count:', user?.stats?.following);
-    router.push(`/profile/following?id=${user.id}`);
+    router.push(`/profile/following?id=${user._id}`);
   };
 
   return (
@@ -175,17 +175,20 @@ export default function ProfileScreen() {
           <View style={styles.userInfo}>
             <Text style={styles.username}>{user?.username || 'Climber'}</Text>
             <Text style={styles.bio}>{user?.bio || 'Rock climbing enthusiast'}</Text>
-            <Text style={styles.location}>{user?.location || 'Boulder, CO'}</Text>
-            {/* Display Climbing Gyms */}
-            {user?.climbing_gyms && user.climbing_gyms.length > 0 && (
+            
+            {/* Display Climbing Gyms - Handle both formats */}
+            {((user?.climbing_gyms && user.climbing_gyms.length > 0) || 
+              (user?.climbing_gym_ids && user.climbing_gym_ids.length > 0)) && (
               <View style={styles.gymsContainer}>
                 <Ionicons name="barbell-outline" size={14} color="#666" style={styles.gymIcon} />
                 <Text style={styles.gymsText}>
-                  {/* Map over gym objects to get names */}
-                  {user.climbing_gyms.map(gym => gym.name).join(', ')}
+                  {user?.climbing_gyms && user.climbing_gyms.length > 0 
+                    ? user.climbing_gyms.map(gym => gym.name).join(', ')
+                    : 'Member of climbing gym'}
                 </Text>
               </View>
             )}
+            
             <View style={styles.buttonContainer}>
               <TouchableOpacity 
                 style={styles.editButton}

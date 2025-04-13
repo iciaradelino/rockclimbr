@@ -24,10 +24,8 @@ const WorkoutCard = ({ workout }: { workout: Workout }) => (
     </View>
     {workout.climbs.map((climb, index) => (
       <View key={index} style={styles.routeItem}>
-        <Text style={styles.routeName}>{climb.name}</Text>
         <View style={styles.routeDetails}>
           <Text style={styles.routeGrade}>{climb.grade}</Text>
-          <Text style={styles.routeStyle}>{climb.style}</Text>
         </View>
       </View>
     ))}
@@ -98,7 +96,7 @@ export default function ProgressScreen() {
     <ScrollView style={styles.container}>
       <TouchableOpacity 
         style={styles.addButton}
-        onPress={() => router.push('/workouts/add-todays-workout')}
+        onPress={() => router.push('/workouts/workout')}
       >
         <Text style={styles.addButtonText}>Add Today's Workout</Text>
       </TouchableOpacity>

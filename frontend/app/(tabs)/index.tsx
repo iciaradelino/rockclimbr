@@ -22,11 +22,6 @@ interface PostCardProps {
   timestamp: string; // Added timestamp
 }
 
-const DUMMY_POSTS: PostCardProps[] = [
-  // ... Keep dummy data for reference or initial state if needed, but it won't be used for display.
-  // Or remove it entirely if not needed. Let's remove it for clarity.
-];
-
 const PostCard = ({ post }: { post: ApiPost }) => {
   const router = useRouter();
   const handleProfilePress = () => {

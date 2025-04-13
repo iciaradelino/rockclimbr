@@ -24,13 +24,6 @@ export default function ProfileLayout() {
         }}
       />
       <Stack.Screen
-        name="[id]"
-        options={({ route }) => ({
-          title: 'Profile',
-          headerShown: false,
-        })}
-      />
-      <Stack.Screen
         name="edit"
         options={{
           title: 'Edit Profile',

@@ -193,12 +193,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log('API response - Updated user data:', updatedUser);
       console.log('API response - Updated stats:', updatedUser.stats);
       
+      // Add more detailed logging for climbing gyms
+      if (updatedUser.climbing_gyms) {
+        console.log('API response - Climbing gyms:', updatedUser.climbing_gyms);
+      } else if (updatedUser.climbing_gym_ids) {
+        console.log('API response - Climbing gym IDs (needs conversion):', updatedUser.climbing_gym_ids);
+      }
+      
       // Update state with new user data
       setState({ ...state, user: updatedUser });
       
       // Verify state was updated with a timeout
       setTimeout(() => {
         console.log('AFTER refresh - Updated user stats:', state.user?.stats);
+        // Log climbing gyms as well
+        if (state.user?.climbing_gyms) {
+          console.log('AFTER refresh - User climbing gyms:', state.user.climbing_gyms);
+        }
       }, 100);
       
       console.log('User stats refresh complete');

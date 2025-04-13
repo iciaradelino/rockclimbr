@@ -14,13 +14,23 @@ export default function FollowersScreen() {
   const [error, setError] = useState<string | null>(null);
   const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
 
+  console.log(`[${new Date().toISOString()}] FollowersScreen loaded. ID from searchParams: ${id}`);
+
   useEffect(() => {
+    console.log(`[${new Date().toISOString()}] FollowersScreen useEffect. ID: ${id}, Token: ${token ? 'exists' : 'missing'}`);
     if (token && id) {
       loadFollowers();
     }
   }, [token, id]);
 
   const loadFollowers = async () => {
+    console.log(`[${new Date().toISOString()}] loadFollowers called. ID: ${id}, Token: ${token ? 'exists' : 'missing'}`);
+    if (!token || !id) {
+      console.error("LoadFollowers called without token or id. Aborting.");
+      setError("User ID is missing");
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);

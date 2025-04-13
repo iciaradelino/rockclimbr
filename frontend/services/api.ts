@@ -9,19 +9,20 @@ const API_URL = Platform.OS === 'web'
     : 'http://localhost:5000/api'; // For iOS simulator
 
 export interface Climb {
-  name: string;
+  route_name: string;
   grade: string;
-  style: string;
-  is_new: boolean;
+  attempts: number;
+  send_status: string;
+  notes?: string;
 }
 
 export interface Workout {
   _id?: string;
   date: string;
-  duration: string;
+  duration: number;
   location: string;
   climbs: Climb[];
-  session_feeling?: number;
+  session_feeling?: string;
   achievement?: string;
   images: string[];
 }
@@ -47,13 +48,14 @@ export interface Gym {
 }
 
 export interface User {
-  id: string;
+  _id: string;
   username: string;
   email: string;
   bio?: string;
   location?: string;
   avatar_url?: string;
-  climbing_gyms?: Gym[]; // Now expects array of Gym objects
+  climbing_gyms?: Gym[]; // Array of Gym objects
+  climbing_gym_ids?: string[]; // Array of gym IDs from backend
   created_at: string;
   stats: {
     posts: number;
@@ -401,19 +403,15 @@ export const api = {
   // Get feed (posts from followed users and self)
   getFeed: async (token: string): Promise<Post[]> => {
     try {
-      const response = await fetch(`${API_URL}/feed`, {
+          console.log('Fetching feed data...');
+      // Corrected URL
+      const response = await fetchWithErrorHandling(`${API_URL}/posts/feed`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },
       });
-      
-      const data = await response.json();
-      
-      if (!response.ok) {
-        throw new ApiError(data);
-      }
-      
-      return data;
+      console.log('Feed data received:', response);
+      return response;
     } catch (error) {
       console.error('Error fetching feed:', error);
       throw error;

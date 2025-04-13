@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
-import { api, Workout, Climb } from '@/services/api';
+import { api, Workout, Climb as ApiClimb } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
 interface ClimbEntry {
@@ -81,31 +81,42 @@ export default function AddTodaysWorkoutScreen() {
 
   const saveWorkout = async () => {
     if (!duration || !location || climbs.length === 0) {
-      Alert.alert('Error', 'Please fill in all required fields and add at least one climb.');
+      Alert.alert('Error', 'Please fill in all required fields (Location, Duration in minutes) and add at least one climb.');
+      return;
+    }
+
+    // Attempt to parse duration as integer (minutes)
+    const durationMinutes = parseInt(duration, 10);
+    if (isNaN(durationMinutes) || durationMinutes <= 0) {
+      Alert.alert('Error', 'Please enter a valid duration in minutes (e.g., 120).');
       return;
     }
 
     setIsSaving(true);
     try {
-      // Convert climbs to the format expected by the API
-      const formattedClimbs: Climb[] = climbs.map(climb => ({
-        name: `Climb ${climb.grade}`, // You might want to add a name field to the UI
+      // Convert climbs to the format expected by the API (ApiClimb)
+      const formattedClimbs: Omit<ApiClimb, 'notes'>[] = climbs.map(climb => ({
+        route_name: `Climb ${climb.grade}`, // Renamed from name
         grade: climb.grade,
-        style: 'Boulder', // You might want to add a style selector to the UI
-        is_new: climb.isNewClimb
+        attempts: climb.count, // Use count for attempts
+        send_status: 'sent', // Added default send_status
+        // 'style' and 'is_new' are removed as they are not in the backend model
       }));
 
-      const workout: Omit<Workout, '_id'> = {
+      // Convert session_feeling to string or undefined
+      const feelingString = sessionFeeling ? sessionFeeling.toString() : undefined;
+
+      const workout: Omit<Workout, '_id' | 'user_id' | 'created_at'> = {
         date: new Date().toISOString(),
-        duration,
+        duration: durationMinutes, // Use parsed integer
         location,
         climbs: formattedClimbs,
-        session_feeling: sessionFeeling || undefined,
+        session_feeling: feelingString, // Use string version
         achievement: achievement || undefined,
-        images
+        images: images || [] // Ensure images is always an array
       };
 
-      console.log('Sending workout data:', workout); // Debug log
+      console.log('Sending workout data:', JSON.stringify(workout, null, 2)); // Improved debug log
       if (!token) {
         throw new Error('Not authenticated');
       }

@@ -14,13 +14,23 @@ export default function FollowingScreen() {
   const [error, setError] = useState<string | null>(null);
   const [followLoading, setFollowLoading] = useState<Record<string, boolean>>({});
 
+  console.log(`[${new Date().toISOString()}] FollowingScreen loaded. ID from searchParams: ${id}`);
+
   useEffect(() => {
+    console.log(`[${new Date().toISOString()}] FollowingScreen useEffect. ID: ${id}, Token: ${token ? 'exists' : 'missing'}`);
     if (token && id) {
       loadFollowing();
     }
   }, [token, id]);
 
   const loadFollowing = async () => {
+    console.log(`[${new Date().toISOString()}] loadFollowing called. ID: ${id}, Token: ${token ? 'exists' : 'missing'}`);
+    if (!token || !id) {
+      console.error("LoadFollowing called without token or id. Aborting.");
+      setError("User ID is missing");
+      setLoading(false);
+      return;
+    }
     try {
       setLoading(true);
       setError(null);

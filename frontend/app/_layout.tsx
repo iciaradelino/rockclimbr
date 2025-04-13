@@ -77,7 +77,7 @@ function RootLayoutNav() {
             }} 
           />
           <Stack.Screen 
-            name="workouts/add-todays-workout" 
+            name="workouts/workout" 
             options={{ 
               headerShown: true,
               title: "Today's Workout",
