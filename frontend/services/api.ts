@@ -613,6 +613,54 @@ export const api = {
       throw error;
     }
   },
+
+  getBaseUrl: () => API_URL,
+
+  deleteWorkout: async (token: string, id: string): Promise<void> => {
+    try {
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+      
+      console.log(`Attempting to delete workout with ID: ${id}`);
+      const url = `${API_URL}/workouts/${id}`;
+      console.log(`DELETE request to: ${url}`);
+      
+      // For web platform, handle differently to avoid CORS issues
+      const corsOptions: RequestInit = Platform.OS === 'web' 
+        ? { mode: 'cors' as RequestMode } // For web, don't include credentials 
+        : { credentials: 'include' as RequestCredentials, mode: 'cors' as RequestMode }; // For native, include credentials
+      
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        ...corsOptions,
+      });
+      
+      console.log(`DELETE response status: ${response.status}`);
+      
+      if (!response.ok) {
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { error: `Failed with status: ${response.status}` };
+        }
+        console.error('Delete workout error response:', errorData);
+        throw new ApiError(errorData);
+      }
+      
+      console.log('Workout deleted successfully');
+      return; // Explicitly return void
+    } catch (error) {
+      console.error('Error in deleteWorkout method:', error);
+      throw error;
+    }
+  },
 };
 
 // Export a default component to satisfy Expo Router

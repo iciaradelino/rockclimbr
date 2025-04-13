@@ -169,7 +169,7 @@ export default function ProfileScreen() {
       <View style={styles.header}>
         <View style={styles.profileHeader}>
           <Image
-            source={{ uri: user?.avatar_url || 'https://via.placeholder.com/100' }}
+            source={user?.avatar_url ? { uri: user.avatar_url } : require('../../assets/images/default-avatar.jpg')}
             style={styles.profileImage}
           />
           <View style={styles.userInfo}>

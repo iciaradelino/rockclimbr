@@ -35,7 +35,7 @@ const PostCard = ({ post }: { post: ApiPost }) => {
       <TouchableOpacity onPress={handleProfilePress} style={styles.postHeader}>
         <View style={styles.userInfo}>
           <Image 
-            source={{ uri: post.avatar_url || 'https://via.placeholder.com/50' }} // Use avatar_url, provide fallback
+            source={post.avatar_url ? { uri: post.avatar_url } : require('../../assets/images/default-avatar.jpg')}
             style={styles.avatar} 
           />
           <View style={styles.textContainer}>
@@ -125,56 +125,56 @@ export default function ExploreScreen() {
     loadFeed(true);
   }, [loadFeed]);
 
-  const ListHeader = () => (
-    <TouchableOpacity 
-      style={styles.searchContainer}
-      onPress={() => router.push('/search')}
-    >
-      <SearchBox
-        value=""
-        onChangeText={() => {}} // No-op as it's not editable
-        placeholder="Search climbers..."
-        editable={false} // Keep it non-editable, links to search page
-      />
-    </TouchableOpacity>
-  );
-
-  const renderListEmptyComponent = () => (
-    <View style={styles.emptyContainer}>
-      {isLoading ? (
-        <ActivityIndicator size="large" color="#4E6E5D" />
-      ) : error ? (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => loadFeed()}>
-             <Text style={styles.retryButtonText}>Retry</Text>
-          </TouchableOpacity>
-        </View>
-      ) : (
-        <Text style={styles.emptyText}>Your feed is empty. Follow some climbers or add your first post!</Text>
-        // Optionally add buttons to search users or add post
-      )}
-    </View>
-  );
-
   return (
     <View style={styles.container}>
-      <FlatList
-        data={posts}
-        renderItem={({ item }) => <PostCard post={item} />}
-        keyExtractor={item => item._id || Math.random().toString()} // Use _id from API post
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={posts.length === 0 ? styles.emptyListContent : styles.listContent}
-        ListHeaderComponent={ListHeader}
-        ListEmptyComponent={renderListEmptyComponent}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            colors={['#4E6E5D']} // Customize spinner color
+      <TouchableOpacity 
+        style={styles.searchContainer}
+        onPress={() => router.push('/search')}
+      >
+        <View style={styles.searchBoxWrapper}>
+          <SearchBox
+            value=""
+            onChangeText={() => {}}
+            placeholder="Search climbers..."
+            editable={false}
           />
-        }
-      />
+        </View>
+      </TouchableOpacity>
+      
+      {isLoading ? (
+        <View style={styles.emptyContainer}>
+          <ActivityIndicator size="large" color="#4E6E5D" />
+        </View>
+      ) : error ? (
+        <View style={styles.emptyContainer}>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity style={styles.retryButton} onPress={() => loadFeed()}>
+              <Text style={styles.retryButtonText}>Retry</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      ) : (
+        <FlatList
+          data={posts}
+          renderItem={({ item }) => <PostCard post={item} />}
+          keyExtractor={item => item._id || Math.random().toString()}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={posts.length === 0 ? styles.emptyListContent : styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>Your feed is empty. Follow some climbers or add your first post!</Text>
+            </View>
+          }
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#4E6E5D']}
+            />
+          }
+        />
+      )}
     </View>
   );
 }
@@ -194,12 +194,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   searchContainer: {
-    paddingLeft: 2, // Add horizontal padding
-    paddingRight: 2, // Add horizontal padding
+    paddingLeft: 0,
+    paddingRight: 0,
     paddingVertical: 8,
     backgroundColor: 'white',
-    // Removed marginBottom to let FlatList handle spacing
-    borderBottomColor: '#f0f0f0', // Optional: separator color
+    width: '100%',
+    height: 56,
+    zIndex: 10, // Ensure it stays on top
+  },
+  searchBoxWrapper: {
+    flex: 1,
+    marginHorizontal: 16,
   },
   postCard: {
     marginHorizontal: 16,
@@ -304,11 +309,11 @@ const styles = StyleSheet.create({
     marginTop: 4, // Add margin above timestamp
   },
   emptyContainer: {
-    flex: 1, // Ensure it takes space
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
-    marginTop: 50, // Add some margin from the header
+    marginTop: 0,
   },
   emptyText: {
     fontSize: 16,

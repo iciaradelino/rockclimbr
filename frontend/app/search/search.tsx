@@ -97,7 +97,7 @@ export default function SearchScreen() {
         onPress={() => handleProfilePress(item._id)}
       >
         <Image 
-          source={{ uri: item.avatar_url || 'https://via.placeholder.com/50' }} 
+          source={item.avatar_url ? { uri: item.avatar_url } : require('../../assets/images/default-avatar.jpg')} 
           style={styles.profileImage} 
         />
         <View style={styles.userDetails}>
@@ -181,7 +181,15 @@ export default function SearchScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    paddingLeft: 16,
+    paddingRight: 16,
+    paddingVertical: 8,
     backgroundColor: 'white',
+    borderBottomColor: '#f0f0f0',
+    borderBottomWidth: 1,
+    width: '100%',
+    height: 56,
+    zIndex: 10, // Ensure it stays on top
   },
   header: {
     flexDirection: 'row',

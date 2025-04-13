@@ -281,8 +281,8 @@ const EditProfileScreen = () => {
                     source={avatarUri ? 
                         (avatarUri.startsWith('http') || avatarUri.startsWith('file:')) ? 
                             { uri: avatarUri } : 
-                            require('../../assets/images/default-avatar.png')
-                        : require('../../assets/images/default-avatar.png')}
+                            require('../../assets/images/default-avatar.jpg')
+                        : require('../../assets/images/default-avatar.jpg')}
                     style={styles.avatar}
                 />
                 <TouchableOpacity onPress={pickImage} style={styles.changeAvatarButton}>

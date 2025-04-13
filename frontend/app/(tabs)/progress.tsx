@@ -13,8 +13,8 @@ import { router, useFocusEffect } from 'expo-router';
 import { api, Workout } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 
-const WorkoutCard = ({ workout }: { workout: Workout }) => (
-  <View style={styles.workoutCard}>
+const WorkoutCard = ({ workout, onPress }: { workout: Workout, onPress: () => void }) => (
+  <TouchableOpacity style={styles.workoutCard} onPress={onPress}>
     <View style={styles.workoutHeader}>
       <Text style={styles.workoutDate}>{new Date(workout.date).toLocaleDateString('en-US', { 
         month: 'short', 
@@ -29,7 +29,7 @@ const WorkoutCard = ({ workout }: { workout: Workout }) => (
         </View>
       </View>
     ))}
-  </View>
+  </TouchableOpacity>
 );
 
 export default function ProgressScreen() {
@@ -134,7 +134,14 @@ export default function ProgressScreen() {
           <Text style={styles.emptyText}>No workouts yet. Add your first workout!</Text>
         ) : (
           workouts.map((workout) => (
-            <WorkoutCard key={workout._id} workout={workout} />
+            <WorkoutCard 
+              key={workout._id} 
+              workout={workout} 
+              onPress={() => {
+                console.log('Navigating to workout detail with ID:', workout._id);
+                router.push(`/workouts/${workout._id}`);
+              }}
+            />
           ))
         )}
       </View>

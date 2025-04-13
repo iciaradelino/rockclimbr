@@ -80,7 +80,7 @@ export default function FollowingScreen() {
         onPress={() => handleProfilePress(item._id)}
       >
         <Image 
-          source={{ uri: item.avatar_url || 'https://via.placeholder.com/40' }} 
+          source={item.avatar_url ? { uri: item.avatar_url } : require('../../assets/images/default-avatar.jpg')} 
           style={styles.avatar} 
         />
         <View style={styles.userDetails}>

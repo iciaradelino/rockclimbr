@@ -36,9 +36,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#f5f5f5',
     borderRadius: 10,
     paddingHorizontal: 12,
-    marginHorizontal: 16,
-    marginVertical: 8,
+    marginHorizontal: 0,
+    marginVertical: 0,
     height: 40,
+    width: '100%',
   },
   icon: {
     marginRight: 8,
@@ -48,5 +49,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontFamily: 'Inter_400Regular',
     color: '#333',
+    height: 40,
+    paddingVertical: 0,
   },
 }); 
