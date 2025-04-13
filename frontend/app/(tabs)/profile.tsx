@@ -201,14 +201,10 @@ export default function ProfileScreen() {
                 onPress={handleSignOut}
                 disabled={isLoading}
               >
-                {isLoading ? (
-                  <ActivityIndicator size="small" color="#4E6E5D" />
-                ) : (
-                  <>
-                    <Ionicons name="log-out-outline" size={16} color="#4E6E5D" />
-                    <Text style={styles.signOutButtonText}>Sign Out</Text>
-                  </>
-                )}
+                <>
+                  <Ionicons name="log-out-outline" size={16} color="#4E6E5D" />
+                  <Text style={styles.signOutButtonText}>Sign Out</Text>
+                </>
               </TouchableOpacity>
             </View>
           </View>

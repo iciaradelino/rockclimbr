@@ -154,6 +154,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: 'white',
   },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee',
+    backgroundColor: 'white',
+  },
+  headerTitle: {
+    fontSize: 17,
+    fontFamily: 'Inter_600SemiBold',
+    color: '#000',
+    marginLeft: 16,
+  },
+  backButton: {
+    padding: 4,
+  },
   centerContainer: {
     flex: 1,
     justifyContent: 'center',

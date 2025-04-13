@@ -5,22 +5,19 @@ export default function ProfileLayout() {
   const { user } = useAuth();
 
   return (
-    <Stack screenOptions={{ headerShown: false }}>
-      
+    <Stack>
       <Stack.Screen
         name="following"
-        options={{
-          headerShown: true,
+        options={{  
           title: 'Following',
-          headerBackTitle: 'Back'
+          headerShown: true,
         }}
       />
       <Stack.Screen
         name="followers"
         options={{
-          headerShown: true,
           title: 'Followers',
-          headerBackTitle: 'Back'
+          headerShown: true,
         }}
       />
       <Stack.Screen

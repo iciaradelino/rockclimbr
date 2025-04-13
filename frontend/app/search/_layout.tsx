@@ -4,9 +4,10 @@ export default function SearchLayout() {
   return (
     <Stack>
       <Stack.Screen
-        name="index"
+        name="search"
         options={{
-          headerShown: false,
+          title: 'Search',
+          headerShown: true,
         }}
       />
     </Stack>
