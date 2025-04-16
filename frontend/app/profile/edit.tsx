@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, TextInput, StyleSheet, Image, ScrollView, TouchableOpacity, Alert, ActivityIndicator, FlatList } from 'react-native';
+import { View, Text, TextInput, StyleSheet, Image, ScrollView, TouchableOpacity, Alert, ActivityIndicator, FlatList, Modal } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import { useAuth } from '@/context/AuthContext';
@@ -25,6 +25,13 @@ const EditProfileScreen = () => {
     const [isSavingProfile, setIsSavingProfile] = useState(false);
     const [isPasswordLoading, setIsPasswordLoading] = useState(false);
     const [initialGymIds, setInitialGymIds] = useState<string[]>([]);
+
+    // --- State for Add Gym Modal ---
+    const [isAddGymModalVisible, setIsAddGymModalVisible] = useState(false);
+    const [newGymName, setNewGymName] = useState('');
+    const [newGymLocation, setNewGymLocation] = useState('');
+    const [newGymFranchise, setNewGymFranchise] = useState('');
+    // -----------------------------
 
     useEffect(() => {
         if (user) {
@@ -120,27 +127,49 @@ const EditProfileScreen = () => {
             return;
         }
 
+        // --- Open Modal instead of direct add ---
+        setNewGymName(gymInput.trim()); // Pre-fill name
+        setNewGymLocation('');          // Reset location
+        setNewGymFranchise('');         // Reset franchise
+        setIsAddGymModalVisible(true);
+        setGymInput('');               // Clear the search input
+        setSearchResults([]);          // Clear search results
+        // ----------------------------------------
+    };
+
+    // --- Modal Submit/Cancel Handlers ---
+    const handleSubmitNewGymDetails = async () => {
+        if (!token || !newGymName || !newGymLocation) {
+            Alert.alert("Missing Information", "Please provide both a name and location for the gym.");
+            return;
+        }
+        setIsSavingProfile(true); // Use the existing loading state
         try {
-            setIsSavingProfile(true);
-            
-            try {
-                const newGymData = await api.addGym(token, { name: gymInput.trim(), location: '' }); 
-                addGymTag(newGymData);
-            } catch (error: any) {
-                if (error.message?.includes('CORS') || error.name === 'TypeError') {
-                    throw new Error('Network connection error. Please check your connection and ensure the server is running.');
-                } else {
-                    throw error;
-                }
-            }
+            console.log("Adding gym with details:", { name: newGymName, location: newGymLocation, franchise: newGymFranchise });
+            // Pass franchise to the API call
+            const addedGym = await api.addGym(token, { 
+                name: newGymName, 
+                location: newGymLocation, 
+                franchise: newGymFranchise || undefined // Send undefined if empty 
+            });
+            addGymTag(addedGym); // Add the newly created gym to the selected list
+            setIsAddGymModalVisible(false); // Close modal on success
         } catch (error: any) {
-            console.error("Error adding new gym:", error);
+            console.error("Error adding new gym via modal:", error);
             Alert.alert("Error", error.message || "Failed to add gym.");
         } finally {
             setIsSavingProfile(false);
         }
     };
-    // ----------------------
+
+    const handleCancelAddGym = () => {
+        setIsAddGymModalVisible(false);
+        // Reset modal fields if needed
+        setNewGymName('');
+        setNewGymLocation('');
+        setNewGymFranchise('');
+    };
+    // ------------------------------------
 
     const handleSaveChanges = async () => {
         if (!token) return;
@@ -434,6 +463,71 @@ const EditProfileScreen = () => {
                     )}
                 </TouchableOpacity>
             </View>
+
+            {/* --- Add Gym Modal --- */}
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={isAddGymModalVisible}
+                onRequestClose={handleCancelAddGym}
+            >
+                <View style={styles.modalOverlay}>
+                    <View style={styles.modalContainer}>
+                        <Text style={styles.modalTitle}>Add New Gym Details</Text>
+
+                        <Text style={styles.modalLabel}>Gym Name</Text>
+                        <TextInput
+                            style={[styles.input, styles.modalInput]} // Re-use input style
+                            value={newGymName}
+                            // editable={false} // Keep it editable in case user mistyped
+                            onChangeText={setNewGymName}
+                            placeholder="Gym Name"
+                            placeholderTextColor="#999"
+                        />
+
+                        <Text style={styles.modalLabel}>Location</Text>
+                        {/* Replace LocationAutocomplete with TextInput */}
+                        <TextInput
+                            style={[styles.input, styles.modalInput]}
+                            value={newGymLocation}
+                            onChangeText={setNewGymLocation}
+                            placeholder="Enter gym address or city"
+                            placeholderTextColor="#999"
+                        />
+
+                        <Text style={styles.modalLabel}>Franchise (Optional)</Text>
+                        <TextInput
+                            style={[styles.input, styles.modalInput]} // Re-use input style
+                            value={newGymFranchise}
+                            onChangeText={setNewGymFranchise}
+                            placeholder="e.g., Movement, Planet Granite"
+                            placeholderTextColor="#999"
+                        />
+
+                        <View style={styles.modalButtonContainer}>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.cancelButton]}
+                                onPress={handleCancelAddGym}
+                                disabled={isSavingProfile}
+                            >
+                                <Text style={[styles.modalButtonText, styles.cancelButtonText]}>Cancel</Text>
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                                style={[styles.modalButton, styles.submitButton, isSavingProfile && styles.buttonDisabled]}
+                                onPress={handleSubmitNewGymDetails}
+                                disabled={isSavingProfile}
+                            >
+                                {isSavingProfile ? (
+                                    <ActivityIndicator color="#FFF" size="small" />
+                                ) : (
+                                    <Text style={styles.modalButtonText}>Add Gym</Text>
+                                )}
+                            </TouchableOpacity>
+                        </View>
+                    </View>
+                </View>
+            </Modal>
+            {/* --------------------- */}
         </ScrollView>
     );
 };
@@ -595,6 +689,76 @@ const styles = StyleSheet.create({
         fontFamily: 'Inter_500Medium',
         color: '#4E6E5D',
     },
+    // --- Modal Styles ---
+    modalOverlay: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // Semi-transparent background
+    },
+    modalContainer: {
+        width: '90%',
+        backgroundColor: 'white',
+        borderRadius: 12,
+        padding: 25,
+        alignItems: 'stretch', // Stretch items to fill width
+        shadowColor: '#000',
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 4,
+        elevation: 5,
+    },
+    modalTitle: {
+        fontSize: 20,
+        fontFamily: 'Inter_600SemiBold',
+        marginBottom: 20,
+        textAlign: 'center',
+        color: '#333',
+    },
+    modalLabel: {
+        fontSize: 14,
+        fontFamily: 'Inter_600SemiBold',
+        color: '#555',
+        marginBottom: 6,
+        marginTop: 10, // Add some space above labels
+    },
+    modalInput: {
+        marginBottom: 15, // Increase space below inputs
+        backgroundColor: '#F8F8F8', // Match other inputs
+        // Inherits other styles from 'input'
+    },
+    modalButtonContainer: {
+        flexDirection: 'row',
+        justifyContent: 'space-between', // Space out buttons
+        marginTop: 25,
+    },
+    modalButton: {
+        borderRadius: 8,
+        paddingVertical: 12,
+        paddingHorizontal: 20,
+        flex: 1, // Make buttons take equal space
+        alignItems: 'center',
+        marginHorizontal: 5, // Add space between buttons
+    },
+    cancelButton: {
+        backgroundColor: '#f0f0f0', // Lighter background for cancel
+        borderWidth: 1,
+        borderColor: '#ccc',
+    },
+    submitButton: {
+        backgroundColor: '#4E6E5D', // Primary color for submit
+    },
+    modalButtonText: {
+        fontSize: 16,
+        fontFamily: 'Inter_500Medium',
+    },
+    cancelButtonText: {
+        color: '#555', // Darker text for cancel
+    },
+    // ------------------
 });
 
 export default EditProfileScreen; 

@@ -6,6 +6,13 @@ export default function ProfileLayout() {
 
   return (
     <Stack>
+      <Stack.Screen 
+        name="(user)/[id]" 
+        options={{ 
+          headerShown: true,
+          title: 'Profile',
+        }}         
+      />
       <Stack.Screen
         name="following"
         options={{  

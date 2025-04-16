@@ -2,10 +2,15 @@ import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity, ActivityIndi
 import { useRouter } from 'expo-router';
 import { useState, useEffect, useCallback } from 'react';
 import SearchBox from '../../components/SearchBox';
-import { api, UserPublic } from '@/services/api';
+import { api, UserPublic as ApiUserPublic } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from 'expo-router';
+
+// Extend the UserPublic type from the API to include the new field
+interface UserPublic extends ApiUserPublic {
+  climbing_gym_names?: string[];
+}
 
 export default function SearchScreen() {
   const router = useRouter();
@@ -93,7 +98,7 @@ export default function SearchScreen() {
   const renderUserCard = ({ item }: { item: UserPublic }) => (
     <View style={styles.userCard}>
       <TouchableOpacity 
-        style={styles.userInfo}
+        style={styles.userInfoContainer}
         onPress={() => handleProfilePress(item._id)}
       >
         <Image 
@@ -102,12 +107,18 @@ export default function SearchScreen() {
         />
         <View style={styles.userDetails}>
           <Text style={styles.name}>{item.username}</Text>
-          <Text style={styles.bio} numberOfLines={1}>{item.bio || ''}</Text>
-          <Text style={styles.location}>{item.location || ''}</Text>
-          <View style={styles.statsRow}>
-            <Text style={styles.stat}>{item.stats?.posts || 0} posts</Text>
-            <Text style={styles.stat}>{item.stats?.followers || 0} followers</Text>
-          </View>
+          {/* Add bio below username */}
+          {item.bio && (
+            <Text style={styles.bio} numberOfLines={1}> 
+              {item.bio}
+            </Text>
+          )}
+          {/* Display only the first gym name if available */}
+          {item.climbing_gym_names && item.climbing_gym_names.length > 0 && (
+            <Text style={styles.gymNames} numberOfLines={1}>
+              {item.climbing_gym_names[0]}
+            </Text>
+          )}
         </View>
       </TouchableOpacity>
       
@@ -138,7 +149,7 @@ export default function SearchScreen() {
       <SearchBox
         value={searchQuery}
         onChangeText={setSearchQuery}
-        placeholder="Search climbers..."
+        placeholder="Search by username or location..."
       />
       
       {searching ? (
@@ -183,7 +194,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingLeft: 16,
     paddingRight: 16,
-    paddingVertical: 8,
+    paddingVertical: 18,
     backgroundColor: 'white',
     borderBottomColor: '#f0f0f0',
     borderBottomWidth: 1,
@@ -230,64 +241,61 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   listContainer: {
-    padding: 16,
+    paddingHorizontal: 2,
+    paddingVertical: 12,
   },
   userCard: {
     flexDirection: 'row',
-    padding: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     backgroundColor: 'white',
     borderRadius: 12,
     marginBottom: 12,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
-      height: 2,
+      height: 1,
     },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOpacity: 0.08,
+    shadowRadius: 2,
+    elevation: 2,
     alignItems: 'center',
   },
-  userInfo: {
+  userInfoContainer: {
     flexDirection: 'row',
     flex: 1,
+    alignItems: 'center',
+    marginRight: 8,
   },
   profileImage: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    marginRight: 16,
+    width: 45,
+    height: 45,
+    borderRadius: 22.5,
+    marginRight: 12,
   },
   userDetails: {
     flex: 1,
+    justifyContent: 'center',
   },
   name: {
-    fontSize: 16,
+    fontSize: 15,
     fontFamily: 'Inter_600SemiBold',
-    color: '#333',
-    marginBottom: 2,
+    color: '#262626',
+    marginBottom: 3,
   },
-  bio: {
-    fontSize: 14,
+  gymNames: {
+    fontSize: 13,
+    fontFamily: 'Inter_400Regular',
     color: '#666',
-    fontFamily: 'Inter_400Regular',
-    marginBottom: 2,
+    flexShrink: 1,
+    marginTop: 2, // Add margin above gym names if bio is present
   },
-  location: {
-    fontSize: 14,
-    color: '#888',
-    fontFamily: 'Inter_400Regular',
-    marginBottom: 4,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-  },
-  stat: {
-    fontSize: 12,
-    color: '#666',
-    fontFamily: 'Inter_400Regular',
+  bio: { // Add style for bio
+    fontSize: 13,
+    fontFamily: 'Inter_500Medium', // Make it slightly thicker (Medium)
+    color: '#444', // Slightly darker than gym names
+    marginBottom: 3, // Space below bio if gym names are present
+    flexShrink: 1,
   },
   followButton: {
     backgroundColor: '#4E6E5D',

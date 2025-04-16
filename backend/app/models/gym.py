@@ -5,6 +5,7 @@ from typing import Optional
 class GymBase(BaseModel):
     name: str
     location: str
+    franchise: Optional[str] = None
 
 class GymCreate(GymBase):
     pass

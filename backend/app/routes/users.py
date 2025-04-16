@@ -21,23 +21,39 @@ def search_users():
             return jsonify({"error": "Not authenticated"}), 401
         
         query = request.args.get('q', '')
-        if not query:
+        if not query or len(query.strip()) < 2: # Also check min length
             return jsonify([])
+
+        query_stripped = query.strip()
         
-        # Construct the MongoDB query
+        # 1. Find gyms matching the query by name
+        matching_gyms_cursor = db.gyms.find(
+            {"name": {"$regex": query_stripped, "$options": "i"}},
+            {"_id": 1} # Only fetch the ID
+        )
+        matched_gym_ids = [gym["_id"] for gym in matching_gyms_cursor]
+
+        # 2. Construct the user search query conditions
+        or_conditions = [
+            {"username": {"$regex": query_stripped, "$options": "i"}},
+            {"location": {"$regex": query_stripped, "$options": "i"}}
+        ]
+        
+        # Add gym ID condition only if gyms were found
+        if matched_gym_ids:
+            or_conditions.append({"climbing_gym_ids": {"$in": matched_gym_ids}})
+        
+        # Construct the final MongoDB query
         mongo_query = {
             "_id": {"$ne": ObjectId(current_user["_id"])}, # Exclude self
-            "$or": [
-                {"username": {"$regex": query, "$options": "i"}},
-                {"location": {"$regex": query, "$options": "i"}}
-            ]
+            "$or": or_conditions
         }
 
-        # Find users matching query, excluding the current user
+        # 3. Find users matching the combined query
         users_cursor = db.users.find(mongo_query).limit(20)
         
         # Make a copy to iterate over (cursors can sometimes be exhausted)
-        users_list = list(users_cursor) 
+        users_list = list(users_cursor)
 
         results = []
         current_user_id_str = str(current_user["_id"])
@@ -49,6 +65,22 @@ def search_users():
         # Iterate over the copied list
         for user in users_list: 
             user_id_str = str(user["_id"])
+            
+            # Fetch climbing gym names based on IDs
+            gym_names = []
+            gym_ids_str = user.get("climbing_gym_ids", [])
+            if gym_ids_str:
+                # Convert string IDs to ObjectIds for querying gyms
+                try:
+                    gym_object_ids = [ObjectId(gid) for gid in gym_ids_str if gid] 
+                except bson_errors.InvalidId:
+                    print(f"Warning: Invalid ObjectId found in climbing_gym_ids for user {user_id_str}")
+                    gym_object_ids = [] # Handle invalid IDs gracefully
+                
+                if gym_object_ids:
+                    gyms_cursor = db.gyms.find({"_id": {"$in": gym_object_ids}}, {"name": 1})
+                    gym_names = [gym.get("name", "Unknown Gym") for gym in gyms_cursor]
+            
             user_data = {
                 "_id": user_id_str,
                 "username": user["username"],
@@ -58,7 +90,8 @@ def search_users():
                 "avatar_url": user.get("avatar_url", ""),
                 "stats": user.get("stats", {"posts": 0, "followers": 0, "following": 0}),
                 "created_at": user.get("created_at", datetime.utcnow()),
-                "is_following": user_id_str in following_ids # Check follow status
+                "is_following": user_id_str in following_ids,
+                "climbing_gym_names": gym_names
             }
             try:
                 # Validate with Pydantic model before appending
@@ -239,7 +272,8 @@ def get_user_profile(user_id):
             "created_at": profile_user.get("created_at", datetime.utcnow()), # Added created_at
             "is_following": is_following, 
             "is_self": is_self,
-            "posts": user_posts # Added posts
+            "posts": user_posts, # Added posts
+            "climbing_gym_names": [] # Added climbing_gym_names
         }
 
         # Return the dictionary directly (validation needs adjustment if UserPublic model used)

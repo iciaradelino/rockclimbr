@@ -20,8 +20,9 @@ def search_gyms():
         if not query:
             return jsonify([])
         
-        # Case-insensitive regex search
-        regex = re.compile(f'{re.escape(query)}', re.IGNORECASE)
+        # Case-insensitive regex search starting from the beginning of the name
+        regex = re.compile(f'^{re.escape(query)}', re.IGNORECASE)
+        # Include franchise in the search results if available
         gym_cursor = db.gyms.find({"name": regex}).limit(10)
         
         gyms_list = []
@@ -48,18 +49,19 @@ def add_gym():
         if not current_user:
             return jsonify({"error": "Not authenticated"}), 401
         
-        # Validate request data
+        # Validate request data using GymCreate which now includes franchise
         gym_data = GymCreate(**request.json)
         gym_name_lower = gym_data.name.lower()
         
-        # Check if gym already exists
+        # Check if gym already exists (consider location/franchise for uniqueness? For now, just name)
         existing_gym = db.gyms.find_one({"name_lower": gym_name_lower})
         if existing_gym:
             existing_gym["_id"] = str(existing_gym["_id"])
-            return jsonify(Gym(**existing_gym).dict(by_alias=True))
+            # Return the existing gym, ensuring franchise is included if present
+            return jsonify(Gym(**existing_gym).dict(by_alias=True)) 
         
         # Create gym document
-        gym_dict = gym_data.dict()
+        gym_dict = gym_data.dict() # This will include name, location, and franchise (if provided)
         gym_dict.update({
             "name_lower": gym_name_lower,
             "added_by": str(current_user["_id"]),
@@ -71,8 +73,12 @@ def add_gym():
         
         # Get the created gym
         created_gym = db.gyms.find_one({"_id": result.inserted_id})
+        if not created_gym:
+            return jsonify({"error": "Failed to retrieve created gym"}), 500
+            
         created_gym["_id"] = str(created_gym["_id"])
         
+        # Return the newly created gym including franchise
         return jsonify(Gym(**created_gym).dict(by_alias=True)), 201
     except Exception as e:
         print("Error adding gym:", str(e))
@@ -92,7 +98,8 @@ def get_gym(gym_id):
             return jsonify({"error": "Gym not found"}), 404
         
         gym["_id"] = str(gym["_id"])
-        return jsonify(Gym(**gym).dict(by_alias=True))
+        # Ensure franchise is included in the response
+        return jsonify(Gym(**gym).dict(by_alias=True)) 
     except Exception as e:
         print("Error getting gym:", str(e))
         print("Traceback:", traceback.format_exc())
@@ -118,10 +125,11 @@ def update_gym(gym_id):
         if str(existing_gym["added_by"]) != str(current_user["_id"]):
             return jsonify({"error": "Not authorized to update this gym"}), 403
         
-        # Validate update data
+        # Validate update data using GymCreate
         gym_data = GymCreate(**request.json)
-        update_dict = gym_data.dict()
-        update_dict["name_lower"] = update_dict["name"].lower()
+        update_dict = gym_data.dict(exclude_unset=True) # Exclude fields not provided
+        if 'name' in update_dict:
+             update_dict["name_lower"] = update_dict["name"].lower()
         
         # Update gym
         result = db.gyms.find_one_and_update(
@@ -132,7 +140,8 @@ def update_gym(gym_id):
         
         if result:
             result["_id"] = str(result["_id"])
-            return jsonify(Gym(**result).dict(by_alias=True))
+            # Ensure franchise is included in the response
+            return jsonify(Gym(**result).dict(by_alias=True)) 
         return jsonify({"error": "Update failed"}), 500
     except Exception as e:
         print("Error updating gym:", str(e))

@@ -96,7 +96,7 @@ export default function ProgressScreen() {
     <ScrollView style={styles.container}>
       <TouchableOpacity 
         style={styles.addButton}
-        onPress={() => router.push('/workouts/workout')}
+        onPress={() => router.push('/progress/add-workout')}
       >
         <Text style={styles.addButtonText}>Add Today's Workout</Text>
       </TouchableOpacity>
@@ -139,7 +139,7 @@ export default function ProgressScreen() {
               workout={workout} 
               onPress={() => {
                 console.log('Navigating to workout detail with ID:', workout._id);
-                router.push(`/workouts/${workout._id}`);
+                router.push(`/progress/${workout._id}`);
               }}
             />
           ))

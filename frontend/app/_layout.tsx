@@ -68,29 +68,11 @@ function RootLayoutNav() {
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="auth" options={{ headerShown: false }} />
           <Stack.Screen name="profile" options={{ headerShown: false }} />
-          <Stack.Screen name="workouts" options={{ headerShown: false }} />
+          <Stack.Screen name="progress" options={{ headerShown: false }} />
           <Stack.Screen 
             name="search" 
             options={{ 
               headerShown: false,
-            }} 
-          />
-          <Stack.Screen 
-            name="workouts/workout" 
-            options={{ 
-              headerShown: true,
-              title: "Today's Workout",
-              headerTintColor: '#000',
-              headerBackTitle: 'Back'
-            }} 
-          />
-          <Stack.Screen 
-            name="profile/followers" 
-            options={{ 
-              headerShown: true,
-              title: "My Followers",
-              headerTintColor: '#000',
-              headerBackTitle: 'Back'
             }} 
           />
         </Stack>

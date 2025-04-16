@@ -81,7 +81,7 @@ def add_post():
 @posts.route('/feed', methods=['GET'])
 @login_required
 def get_feed():
-    """Get feed of posts from followed users and self."""
+    """Get feed of posts from followed users and users sharing gyms."""
     if db is None:
         return jsonify({"error": "MongoDB is not connected"}), 500
     try:
@@ -89,17 +89,35 @@ def get_feed():
         if not current_user:
             return jsonify({"error": "Not authenticated"}), 401
         
-        # Get user ID and following list
         user_id = str(current_user["_id"])
-        following = list(db.follows.find({"follower_id": user_id}))
-        following_ids = [follow["following_id"] for follow in following]
-        following_ids.append(user_id)  # Include user's own posts
         
-        # Get posts from followed users and self
+        # 1. Get IDs of users the current user follows
+        following_cursor = db.follows.find({"follower_id": user_id}, {"following_id": 1})
+        following_ids = {follow["following_id"] for follow in following_cursor}
+        
+        # 2. Get IDs of users sharing gyms with the current user
+        user_gym_ids = current_user.get("climbing_gym_ids", [])
+        gym_users_ids = set()
+        if user_gym_ids:
+            # Find users who have at least one gym in common and are not the current user
+            gym_users_cursor = db.users.find(
+                {"climbing_gym_ids": {"$in": user_gym_ids}, "_id": {"$ne": current_user["_id"]}},
+                {"_id": 1}
+            )
+            gym_users_ids = {str(user["_id"]) for user in gym_users_cursor}
+
+        # 3. Combine follower IDs and gym-mate IDs (excluding self)
+        combined_user_ids = list(following_ids.union(gym_users_ids))
+
+        # If the combined list is empty, return an empty feed
+        if not combined_user_ids:
+             return jsonify([])
+
+        # 4. Get posts from the combined list of users, sorted by time
         pipeline = [
-            {"$match": {"user_id": {"$in": following_ids}}},
+            {"$match": {"user_id": {"$in": combined_user_ids}}},
             {"$sort": {"timestamp": -1}},
-            {"$limit": 50}
+            {"$limit": 50} # Keep the limit for performance
         ]
         
         posts_cursor = db.posts.aggregate(pipeline)
@@ -107,6 +125,10 @@ def get_feed():
         
         for post in posts_cursor:
             post["_id"] = str(post["_id"])
+            # Ensure necessary fields like username and avatar_url are present
+            # The Post model might handle defaults if not found, but it's good practice
+            # If post doesn't have username/avatar, we might need a lookup here,
+            # but assuming they are added during post creation.
             posts_list.append(Post(**post).dict(by_alias=True))
             
         return jsonify(posts_list)

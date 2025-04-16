@@ -180,7 +180,7 @@ export default function ProfileScreen() {
             {((user?.climbing_gyms && user.climbing_gyms.length > 0) || 
               (user?.climbing_gym_ids && user.climbing_gym_ids.length > 0)) && (
               <View style={styles.gymsContainer}>
-                <Ionicons name="barbell-outline" size={14} color="#666" style={styles.gymIcon} />
+                <Ionicons name="location-outline" size={14} color="#666" style={styles.gymIcon} />
                 <Text style={styles.gymsText}>
                   {user?.climbing_gyms && user.climbing_gyms.length > 0 
                     ? user.climbing_gyms.map(gym => gym.name).join(', ')
@@ -260,7 +260,7 @@ export default function ProfileScreen() {
                   <View style={styles.postInfo}>
                     <Text style={styles.postCaption}>{post.caption}</Text>
                     <View style={styles.postDetails}>
-                      <Text style={styles.postLocation}>{post.location}</Text>
+                      <Text style={styles.postLocation} numberOfLines={1}>{post.location}</Text>
                       <Text style={styles.postDifficulty}>Grade: {post.difficulty}</Text>
                     </View>
                     <Text style={styles.postDate}>{formatDate(post.timestamp)}</Text>
@@ -477,16 +477,21 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontFamily: 'Inter_400Regular',
     color: '#666',
+    flexShrink: 1,
+    flex: 1,
+    marginRight: 0,
   },
   postDifficulty: {
     fontSize: 12,
     fontFamily: 'Inter_600SemiBold',
     color: '#4E6E5D',
+    marginLeft: 8,
   },
   postDate: {
     fontSize: 12,
     fontFamily: 'Inter_400Regular',
     color: '#999',
+    marginTop: 4,
   },
   emptyContainer: {
     alignItems: 'center',

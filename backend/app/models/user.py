@@ -27,6 +27,7 @@ class UserPublic(UserBase):
     stats: UserStats
     is_following: Optional[bool] = False
     is_self: Optional[bool] = False
+    climbing_gym_names: Optional[List[str]] = None
 
 class ProfileUpdate(BaseModel):
     username: Optional[str] = None

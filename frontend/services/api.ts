@@ -1,12 +1,16 @@
 import { Platform } from 'react-native';
 import { ObjectId } from 'bson'; // May need to install bson: npm install bson @types/bson
 
+// --- IMPORTANT ---
+// Replace 'YOUR_COMPUTER_LOCAL_IP' with your computer's actual local network IP address.
+// Find it using 'ipconfig' (Windows) or 'ifconfig'/'ip addr' (macOS/Linux).
+const YOUR_COMPUTER_LOCAL_IP = '192.168.1.58'; 
+// ---------------
+
 // Update to handle different environments
 const API_URL = Platform.OS === 'web' 
   ? 'http://localhost:5000/api' 
-  : Platform.OS === 'android'
-    ? 'http://10.0.2.2:5000/api'  // For Android emulator
-    : 'http://localhost:5000/api'; // For iOS simulator
+  : `http://${YOUR_COMPUTER_LOCAL_IP}:5000/api`; // For native builds (iOS/Android simulators and physical devices)
 
 export interface Climb {
   route_name: string;
@@ -32,7 +36,8 @@ export interface Post {
   user_id: string;
   image_url: string;
   caption: string;
-  location: string;
+  location?: string;
+  gym_id?: string;
   difficulty: string;
   timestamp: string;
   likes: number;
@@ -45,6 +50,7 @@ export interface Gym {
   id: string; // Corresponds to _id from backend
   name: string;
   location?: string;
+  franchise?: string; // Add optional franchise
 }
 
 export interface User {
@@ -571,7 +577,7 @@ export const api = {
     }
   },
 
-  addGym: async (token: string, gymData: { name: string, location?: string }): Promise<Gym> => {
+  addGym: async (token: string, gymData: { name: string, location: string, franchise?: string }): Promise<Gym> => {
     try {
       const response = await fetch(`${API_URL}/gyms`, {
         method: 'POST',
@@ -579,7 +585,7 @@ export const api = {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(gymData),
+        body: JSON.stringify(gymData), // Send name, location, and optional franchise
       });
       const data = await response.json();
       if (!response.ok) {

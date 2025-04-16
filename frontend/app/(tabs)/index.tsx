@@ -5,6 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { api, Post as ApiPost } from '@/services/api'; // Renamed Post to ApiPost to avoid conflict
+import { StatusBar } from 'expo-status-bar';
+import Constants from 'expo-constants'; // Import Constants
 
 // Update Post interface to match the one from api.ts
 // Note: We use ApiPost from api.ts now, so this local interface might be removed or adjusted.
@@ -23,6 +25,10 @@ interface PostCardProps {
 }
 
 const PostCard = ({ post }: { post: ApiPost }) => {
+  // Log the post data, excluding potentially long URLs - REMOVED
+  // const { image_url, avatar_url, ...restOfPost } = post;
+  // console.log('Rendering PostCard with post (URLs omitted):', JSON.stringify(restOfPost, null, 2));
+  
   const router = useRouter();
   const handleProfilePress = () => {
     if (post.user_id) {
@@ -40,7 +46,7 @@ const PostCard = ({ post }: { post: ApiPost }) => {
           />
           <View style={styles.textContainer}>
             <Text style={styles.username}>{post.username || 'Unknown User'}</Text> {/* Use username */}
-            <Text style={styles.location} numberOfLines={1}>{post.location}</Text> {/* Use location */}
+            <Text style={styles.location} numberOfLines={1}>{post.location || ''}</Text> {/* Use location */}
           </View>
         </View>
         {/* Add more icons or options here if needed */}
@@ -48,22 +54,27 @@ const PostCard = ({ post }: { post: ApiPost }) => {
       <Image
         source={{ uri: post.image_url }} // Use image_url
         style={styles.postImage}
+        resizeMode="cover" // Move resizeMode to props
       />
       <View style={styles.postFooter}>
         <View style={styles.interactionButtons}>
           {/* Add Like button here later */}
           <TouchableOpacity style={styles.iconButton}>
-            <Ionicons name="chatbubble-outline" size={24} color="#666" />
-            <Text style={styles.commentCount}>{post.comments || 0}</Text> {/* Use comments */}
+            <>
+              <Ionicons name="chatbubble-outline" size={24} color="#666" />
+              <Text style={styles.commentCount}>{String(post.comments ?? 0)}</Text> {/* Use comments, ensuring it's a string */}
+            </>
           </TouchableOpacity>
           {/* Add Share/Save buttons here later */}
         </View>
         <TouchableOpacity onPress={handleProfilePress} style={styles.descriptionContainer}>
           <Text style={styles.username}>{post.username || 'Unknown User'}</Text> {/* Use username */}
-          <Text style={styles.description}>{post.caption}</Text> {/* Use caption */}
+          <Text style={styles.description}>{post.caption || ''}</Text> {/* Use caption */}
         </TouchableOpacity>
-        <Text style={styles.difficulty}>Grade: {post.difficulty}</Text> {/* Use difficulty */}
-        <Text style={styles.timestamp}>{new Date(post.timestamp).toLocaleDateString()}</Text> {/* Display timestamp */}
+        <Text style={styles.difficulty}>Grade: {post.difficulty || 'N/A'}</Text> {/* Use difficulty */}
+        {post.timestamp ? (
+          <Text style={styles.timestamp}>{new Date(post.timestamp).toLocaleDateString()}</Text> /* Display timestamp */
+        ) : null}
       </View>
     </View>
   );
@@ -72,7 +83,7 @@ const PostCard = ({ post }: { post: ApiPost }) => {
 
 export default function ExploreScreen() {
   const router = useRouter();
-  const { token } = useAuth();
+  const { token, user } = useAuth();
   const [posts, setPosts] = useState<ApiPost[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -91,8 +102,14 @@ export default function ExploreScreen() {
 
     try {
       const feedPosts = await api.getFeed(token);
-      console.log('Feed posts received from API:', JSON.stringify(feedPosts, null, 2)); // Log the received data
-      setPosts(feedPosts);
+      
+      // Filter out posts where the user_id matches the current user's _id
+      const currentUserId = user?._id;
+      const filteredPosts = currentUserId 
+        ? feedPosts.filter(post => post.user_id !== currentUserId)
+        : feedPosts; // If user is somehow null, show all posts (or handle as needed)
+
+      setPosts(filteredPosts); // Set the filtered posts
     } catch (err: any) {
       console.error('Error loading feed:', err);
       setError(err.message || 'Failed to load feed. Please try again.');
@@ -103,43 +120,28 @@ export default function ExploreScreen() {
         setIsLoading(false);
       }
     }
-  }, [token]);
+  }, [token, user]); // Add user to dependency array
 
   // Load feed when the screen comes into focus
   useFocusEffect(
     useCallback(() => {
-      console.log("Explore screen focused, loading feed.");
       loadFeed();
     }, [loadFeed])
   );
 
   // Also load feed on initial mount or when token changes
   useEffect(() => {
-    console.log("Token changed or initial mount, loading feed.");
     loadFeed();
   }, [token]); // Dependency on token ensures reload on login/logout
 
   const onRefresh = useCallback(() => {
-    console.log("Pull to refresh triggered.");
     setRefreshing(true);
     loadFeed(true);
   }, [loadFeed]);
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity 
-        style={styles.searchContainer}
-        onPress={() => router.push('/search')}
-      >
-        <View style={styles.searchBoxWrapper}>
-          <SearchBox
-            value=""
-            onChangeText={() => {}}
-            placeholder="Search climbers..."
-            editable={false}
-          />
-        </View>
-      </TouchableOpacity>
+      <StatusBar style="auto" translucent={true} />
       
       {isLoading ? (
         <View style={styles.emptyContainer}>
@@ -160,11 +162,28 @@ export default function ExploreScreen() {
           renderItem={({ item }) => <PostCard post={item} />}
           keyExtractor={item => item._id || Math.random().toString()}
           showsVerticalScrollIndicator={false}
-          contentContainerStyle={posts.length === 0 ? styles.emptyListContent : styles.listContent}
+          contentContainerStyle={styles.listContent}
+          ListHeaderComponent={
+            <TouchableOpacity 
+              style={styles.searchContainer}
+              onPress={() => router.push('/search')}
+            >
+              <View style={styles.searchBoxWrapper}>
+                <SearchBox
+                  value=""
+                  onChangeText={() => {}}
+                  placeholder="Search climbers..."
+                  editable={false}
+                />
+              </View>
+            </TouchableOpacity>
+          }
           ListEmptyComponent={
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>Your feed is empty. Follow some climbers or add your first post!</Text>
-            </View>
+            posts.length === 0 && !isLoading && !error ? (
+              <View style={styles.emptyComponentContainer}>
+                <Text style={styles.emptyText}>Your feed is empty. Follow some climbers or add your first post!</Text>
+              </View>
+            ) : null
           }
           refreshControl={
             <RefreshControl
@@ -188,19 +207,15 @@ const styles = StyleSheet.create({
     paddingTop: 8,
     paddingBottom: 16, // Add padding at the bottom
   },
-  emptyListContent: {
-    flexGrow: 1, // Make empty container take full height
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   searchContainer: {
     paddingLeft: 0,
     paddingRight: 0,
-    paddingVertical: 8,
     backgroundColor: 'white',
     width: '100%',
     height: 56,
-    zIndex: 10, // Ensure it stays on top
+    marginTop: 8, // Add margin below the search container
+    marginBottom: 6, // Add margin below the search container
+
   },
   searchBoxWrapper: {
     flex: 1,
@@ -211,14 +226,9 @@ const styles = StyleSheet.create({
     marginBottom: 20, // Increased bottom margin
     backgroundColor: '#fff',
     borderRadius: 12,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 2, // Adjusted shadow offset
-    },
-    shadowOpacity: 0.1, // Reduced shadow opacity
-    shadowRadius: 8, // Adjusted shadow radius
-    elevation: 3, // Adjusted elevation
+    // Use boxShadow for web/iOS, keep elevation for Android
+    boxShadow: '0px 2px 8px rgba(0, 0, 0, 0.1)', // Equivalent boxShadow
+    elevation: 3, // Android shadow
     overflow: 'visible', // Allow shadow to be visible
   },
   postHeader: {
@@ -259,7 +269,6 @@ const styles = StyleSheet.create({
   postImage: {
     width: '100%',
     height: 400, // Keep image height or make dynamic
-    resizeMode: 'cover',
     // Consider adding backgroundColor for placeholders while loading
     backgroundColor: '#f0f0f0',
   },
@@ -341,5 +350,11 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#fff',
     fontFamily: 'Inter_500Medium',
+  },
+  emptyComponentContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
 });
