@@ -174,68 +174,89 @@ const EditProfileScreen = () => {
     const handleSaveChanges = async () => {
         if (!token) return;
         setIsSavingProfile(true);
-        
+        let profileUpdated = false;
+        let avatarUpdated = false;
+
         try {
+            let updatedAvatarUrl: string | null = null;
+
+            // 1. Update Avatar if changed
+            if (avatarChanged && avatarUri && avatarUri.startsWith('file:')) {
+                try {
+                    console.log('Attempting to update avatar...');
+                    const avatarResult = await api.updateAvatar(token, avatarUri);
+                    updatedAvatarUrl = avatarResult.avatar_url; // Get the new URL from backend
+                    avatarUpdated = true;
+                    console.log('Avatar updated successfully, new URL:', updatedAvatarUrl);
+                } catch (avatarError) {
+                    console.error('Error updating avatar:', avatarError);
+                    Alert.alert('Avatar Error', 'Failed to update profile picture.');
+                    // Decide if we should stop or continue with profile update
+                    setIsSavingProfile(false);
+                    return; // Stop if avatar update fails
+                }
+            }
+
+            // 2. Prepare and Update Profile Data (excluding avatar)
             const currentGymIds = selectedGyms
                 .filter(gym => gym && gym.id)
                 .map(gym => gym.id);
-            
-            // Check if gym selection has changed
-            const gymsChanged = initialGymIds.length !== currentGymIds.length || 
+
+            const gymsChanged = initialGymIds.length !== currentGymIds.length ||
                 !initialGymIds.every(id => currentGymIds.includes(id)) ||
                 !currentGymIds.every(id => initialGymIds.includes(id));
-            
-            // Prepare update data with only changed fields
-            const profileUpdateData: Partial<User> & { climbing_gym_ids?: string[], avatar_file?: any } = {};
-            
+
+            const profileUpdateData: Partial<User> & { climbing_gym_ids?: string[] } = {};
             if (username !== user?.username) profileUpdateData.username = username;
             if (bio !== user?.bio) profileUpdateData.bio = bio;
             if (location !== user?.location) profileUpdateData.location = location;
             if (gymsChanged) profileUpdateData.climbing_gym_ids = currentGymIds;
-            
-            // Handle avatar separately since it needs file upload
-            if (avatarChanged && avatarUri) {
-                profileUpdateData.avatar_url = avatarUri;
+            // DO NOT include avatar_url or avatar_file_uri here
+
+            // Only call updateUser if there are changes to profile fields
+            if (Object.keys(profileUpdateData).length > 0) {
+                try {
+                    console.log('Attempting to update profile data:', profileUpdateData);
+                    await updateUser(profileUpdateData); // updateUser is from AuthContext
+                    profileUpdated = true;
+                    console.log('Profile data updated successfully.');
+                } catch (profileError) {
+                    console.error('Error updating profile data:', profileError);
+                    // Handle profile update error (maybe rollback avatar change? unlikely needed)
+                    Alert.alert('Profile Error', 'Failed to update profile details.');
+                    // If avatar was updated but profile failed, user might be in inconsistent state
+                    // We still proceed to refresh to get potentially partially updated data
+                }
             }
-            
-            // Check if there are any changes to save
-            if (Object.keys(profileUpdateData).length === 0) {
-                Alert.alert("No Changes", "You haven't made any changes to your profile details.");
+
+            // 3. Check if anything was actually updated
+            if (!profileUpdated && !avatarUpdated) {
+                Alert.alert("No Changes", "You haven't made any changes.");
                 setIsSavingProfile(false);
                 return;
             }
-            
-            // Test connectivity to server before making the actual update
+
+            // 4. Refresh user data from context *after* all updates
             try {
-                // Attempt to update
-                await updateUser(profileUpdateData);
-                
-                // Success handling
-                Alert.alert('Success', 'Profile updated successfully!');
-                
-                // Update our tracking of initial gym IDs after successful save
-                if (gymsChanged) {
-                    setInitialGymIds(currentGymIds);
-                }
-                
-                if (avatarChanged) {
-                    setAvatarChanged(false);
-                }
-                
-                router.back();
-            } catch (error: any) {
-                // Handle specific error cases for network issues
-                if (error.message?.includes('CORS') || error.name === 'TypeError') {
-                    throw new Error('Network connection error. Please ensure the backend server is running and properly configured for CORS.');
-                } else {
-                    throw error; // Re-throw other errors
-                }
+                 console.log('Refreshing user stats after updates...');
+                 await refreshUserStats();
+                 console.log('User stats refreshed.');
+            } catch (refreshError) {
+                 console.error('Error refreshing user stats after update:', refreshError);
+                 // Inform user, but proceed with navigation
+                 Alert.alert('Refresh Error', 'Could not fully refresh profile data. Please pull down to refresh.');
             }
+
+            Alert.alert("Success", "Profile updated successfully!");
+            setAvatarChanged(false); // Reset avatar changed flag regardless of success/failure of refresh
+            router.back(); // Navigate back
+
         } catch (error: any) {
-            console.error('Error updating profile:', error);
+            // Catch any unexpected errors not caught by specific try/catch blocks
+            console.error('Unexpected error during save process:', error);
             Alert.alert(
-                'Error', 
-                error.message || 'Failed to update profile. Please check your network connection and try again.'
+                'Error',
+                error.message || 'An unexpected error occurred while saving.'
             );
         } finally {
             setIsSavingProfile(false);
@@ -754,6 +775,7 @@ const styles = StyleSheet.create({
     modalButtonText: {
         fontSize: 16,
         fontFamily: 'Inter_500Medium',
+        color: '#FFF',
     },
     cancelButtonText: {
         color: '#555', // Darker text for cancel

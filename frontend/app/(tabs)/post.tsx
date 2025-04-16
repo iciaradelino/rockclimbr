@@ -583,7 +583,6 @@ const styles = StyleSheet.create({
   },
   // --- New Dropdown Styles ---
   gradeDropdown: {
-    maxHeight: 200, // Limit height
     borderWidth: 1,
     borderColor: '#e0e0e0',
     borderRadius: 8,
@@ -643,11 +642,12 @@ const styles = StyleSheet.create({
   },
   submitButton: {
     backgroundColor: '#4E6E5D',
+    color: '#FFF',
   },
   modalButtonText: {
     fontSize: 16,
     fontFamily: 'Inter_500Medium',
-    color: '#fff',
+    color: '#FFF',
   },
   cancelButtonText: {
     color: '#555',

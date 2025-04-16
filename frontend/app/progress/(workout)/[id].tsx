@@ -4,6 +4,8 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { api, Workout } from '@/services/api';
 import { useAuth } from '@/context/AuthContext';
+import React from 'react';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 const DIFFICULTY_COLORS = {
   'Blue (V0-V1)': '#3498db',
@@ -19,6 +21,7 @@ export default function WorkoutDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const insets = useSafeAreaInsets();
 
   const loadWorkout = async () => {
     setLoading(true);
@@ -169,7 +172,7 @@ export default function WorkoutDetailScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={styles.header}>
+      <View style={[styles.header, { paddingTop: insets.top + 8 }]}>
         <TouchableOpacity 
           style={styles.backButton} 
           onPress={() => router.back()}
@@ -294,8 +297,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 16,
     paddingHorizontal: 16,
+    paddingBottom: 16,
     backgroundColor: 'white',
     borderBottomWidth: 1,
     borderBottomColor: '#f0f0f0',

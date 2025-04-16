@@ -598,6 +598,45 @@ export const api = {
     }
   },
 
+  // Update user avatar
+  updateAvatar: async (token: string, avatarUri: string): Promise<{ avatar_url: string }> => {
+    try {
+      const formData = new FormData();
+      
+      // Append the file
+      // The name 'avatar' must match what the backend expects
+      formData.append('avatar', {
+        uri: avatarUri,
+        name: avatarUri.split('/').pop() || 'profile.jpg',
+        type: 'image/jpeg', // Or determine dynamically if needed
+      } as any); // Type assertion might be needed depending on FormData type definitions
+
+      console.log('API updateAvatar - Sending FormData for URI:', avatarUri);
+
+      const response = await fetch(`${API_URL}/auth/me/avatar`, { // New endpoint
+        method: 'PUT', // Or POST, depending on backend implementation
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          // 'Content-Type': 'multipart/form-data' // Fetch usually sets this automatically for FormData
+        },
+        body: formData,
+      });
+
+      const responseData = await response.json();
+      if (!response.ok) {
+        throw new ApiError(responseData);
+      }
+      
+      // Assuming the backend returns the new avatar URL on success
+      console.log('API updateAvatar - Success:', responseData);
+      return responseData; // Expects e.g., { avatar_url: "..." }
+
+    } catch (error) {
+      console.error('Error updating avatar:', error);
+      throw error;
+    }
+  },
+
   // Update user password
   updatePassword: async (token: string, passwordData: { current_password: string, new_password: string }): Promise<{ message: string }> => {
     try {

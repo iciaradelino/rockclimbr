@@ -79,7 +79,6 @@ export default function AddTodaysWorkoutScreen() {
       isNewClimb: false
     }]);
     setShowGradeSelector(false);
-    resetForm();
   };
 
   const toggleNewClimb = (id: string) => {
