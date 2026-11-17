@@ -1,8 +1,8 @@
 # rockclimbr
 
-**Rockclimbr** is a social media application designed specifically for the climbing community. Connect with fellow climbers, share your progress, discover new firends, and stay motivated!
+**Rockclimbr** is a social media application designed specifically for the climbing community. Connect with fellow climbers, share your progress, discover new friends, and stay motivated!
 
-Still not available on the Play Store or the App Store. 
+In internal testing on the Play Store. 
 
 ## Features
 

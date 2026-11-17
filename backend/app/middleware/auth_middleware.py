@@ -11,7 +11,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 load_dotenv()
 
 # JWT Configuration
-JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'your-secret-key')  # You should always use an environment variable
+JWT_SECRET_KEY = os.getenv('JWT_SECRET')
+if not JWT_SECRET_KEY:
+    raise RuntimeError('JWT_SECRET environment variable is not set')
 JWT_ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # Extended to 24 hours for better user experience
 
